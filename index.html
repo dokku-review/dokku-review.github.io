@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dokku-review · Heroku-style review apps on a server you own</title>
+  <link rel="stylesheet" href="setup.css">
+  <style>
+    /* ===== HERO =========================================================== */
+
+    .hero {
+      margin: 0 0 4rem;
+    }
+    .hero h2 {
+      font-family: var(--serif);
+      font-size: clamp(1.75rem, 5vw, 2.4rem);
+      font-style: italic;
+      line-height: 1.18;
+      color: var(--ink);
+      margin: 0 0 1.25rem;
+      letter-spacing: -0.005em;
+      max-width: 22em;
+    }
+    .hero h2 em { color: var(--amber); }
+    .hero p.lead {
+      max-width: 38em;
+      font-size: 1rem;
+      color: var(--ink-2);
+      line-height: 1.55;
+      margin: 0 0 1.5rem;
+    }
+    .hero .cta-row {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+    }
+
+    /* ===== HOW IT WORKS =================================================== */
+
+    .flow {
+      counter-reset: flow;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .flow li {
+      counter-increment: flow;
+      display: grid;
+      grid-template-columns: 3rem 1fr;
+      gap: 1rem;
+      padding: 1.1rem 0;
+      border-bottom: 1px dashed var(--rule);
+    }
+    .flow li:last-child { border-bottom: 0; }
+    .flow li::before {
+      content: counter(flow, decimal-leading-zero);
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.6rem;
+      line-height: 1;
+      color: var(--amber);
+    }
+    .flow h3 {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--ink);
+      margin: 0 0 0.35rem;
+    }
+    .flow p {
+      margin: 0;
+      color: var(--ink-2);
+      font-size: 0.94rem;
+      line-height: 1.55;
+    }
+    .flow p code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--paper-2);
+      padding: 0.05em 0.35em;
+      border: 1px solid var(--rule);
+      color: var(--ink);
+    }
+
+    /* ===== BUILDING BLOCKS ================================================ */
+
+    .blocks {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+      margin: 0;
+    }
+    @media (max-width: 700px) {
+      .blocks { grid-template-columns: 1fr; }
+    }
+    .block {
+      border: 1px solid var(--rule);
+      background: var(--paper-2);
+      padding: 1.25rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .block .tag {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .block h4 {
+      font-family: var(--mono);
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0;
+      letter-spacing: 0.02em;
+    }
+    .block p {
+      font-size: 0.86rem;
+      line-height: 1.5;
+      color: var(--ink-2);
+      margin: 0;
+      flex: 1;
+    }
+    .block a.go {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--amber);
+      text-decoration: none;
+      margin-top: 0.25rem;
+    }
+    .block a.go:hover { text-decoration: underline; }
+  </style>
+</head>
+
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <h1 class="mark">
+      <a href="./"><em>dokku</em><span class="amp">·</span>review</a>
+    </h1>
+    <div></div>
+    <nav class="site-nav">
+      <a href="install.html">install</a>
+      <a href="ci.html">ci</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h2>
+      Heroku-style review apps,<br>
+      on a server you <em>own</em>.
+    </h2>
+    <p class="lead">
+      Open a PR, get a fresh app at <code style="font-family:var(--mono);font-size:0.9em;background:var(--paper-2);border:1px solid var(--rule);padding:0.05em 0.35em;">pr-123.review.example.com</code> with its own Postgres database. Close the PR, it cleans itself up. No SaaS, no per-PR fees — just Dokku on a box you control.
+    </p>
+    <div class="cta-row">
+      <a href="install.html" class="btn is-primary">Install your server →</a>
+      <a href="ci.html" class="btn">Wire up GitHub Actions →</a>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <span class="num">01</span><span class="label">How it works</span>
+    </div>
+    <ol class="flow">
+      <li>
+        <div>
+          <h3>You install once</h3>
+          <p>One <code>curl</code> line on a fresh Ubuntu box. Dokku, Postgres, Let's Encrypt, Redis — all configured. Five minutes.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>CI deploys on each PR</h3>
+          <p>Label a PR <code>review</code>. The reusable GitHub Actions workflow builds your app and pushes it to <code>pr-N.your-domain</code>. A bot comment links the URL.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Postgres is automatic</h3>
+          <p>The <code>system-postgres</code> plugin auto-provisions a Postgres database per PR app from a shared instance. Fast, cheap, no per-PR container overhead.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Close the PR, it disappears</h3>
+          <p>The teardown workflow destroys the app and its database when the PR closes. GitHub deployments get marked inactive. Clean slate.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <span class="num">02</span><span class="label">The three pieces</span>
+    </div>
+    <div class="blocks">
+      <div class="block">
+        <span class="tag">Server</span>
+        <h4>Dokku + plugins</h4>
+        <p>Curl-installable on Ubuntu 24.04. Wizard-driven setup with PostgreSQL, Let's Encrypt, and Redis.</p>
+        <a href="install.html" class="go">Install →</a>
+      </div>
+      <div class="block">
+        <span class="tag">Database</span>
+        <h4>system-postgres</h4>
+        <p>Dokku plugin that auto-provisions a Postgres DB per matching <code class="chip">pr-*</code> app from a shared instance.</p>
+        <a href="https://github.com/dokku-review/system-postgres" class="go">Plugin repo →</a>
+      </div>
+      <div class="block">
+        <span class="tag">CI</span>
+        <h4>Reusable GH Actions</h4>
+        <p>Two workflows you can <code class="chip">uses:</code> from any consumer repo — deploy on PR open/sync, teardown on close.</p>
+        <a href="ci.html" class="go">CI setup →</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="colophon">
+    <a href="https://github.com/dokku-review/actions">actions</a> &nbsp;·&nbsp;
+    <a href="https://github.com/dokku-review/system-postgres">plugin</a>
+  </footer>
+
+</div>
+</body>
+</html>

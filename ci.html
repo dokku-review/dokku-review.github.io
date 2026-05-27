@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dokku-review · CI setup</title>
+  <link rel="stylesheet" href="setup.css">
+  <style>
+    /* ===== CI-PAGE LAYOUT ================================================ */
+
+    .ci-intro p {
+      max-width: 38em;
+      font-size: 1rem;
+      line-height: 1.55;
+      color: var(--ink-2);
+      margin: 0 0 1rem;
+    }
+
+    /* Secrets/vars table */
+    .secrets {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 1.25rem;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+    }
+    .secrets th,
+    .secrets td {
+      border-bottom: 1px dashed var(--rule);
+      padding: 0.6rem 0.5rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .secrets th {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom-style: solid;
+    }
+    .secrets td:first-child { white-space: nowrap; color: var(--ink); font-weight: 700; }
+    .secrets td .kind {
+      display: inline-block;
+      margin-left: 0.5rem;
+      padding: 0.05em 0.4em;
+      font-size: 0.7em;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--paper);
+      background: var(--amber);
+    }
+    .secrets td .kind.var { background: var(--ink-2); }
+    .secrets td.desc { color: var(--ink-2); font-family: var(--sans); }
+    @media (max-width: 620px) {
+      .secrets th, .secrets td { font-size: 0.78rem; padding: 0.5rem 0.35rem; }
+    }
+
+    /* Disclosure: collapsible "details" for the Rails example */
+    details.example {
+      margin: 1.5rem 0;
+      border-left: 3px solid var(--amber);
+      background: var(--paper-2);
+      padding: 0.5rem 1.25rem;
+    }
+    details.example summary {
+      cursor: pointer;
+      list-style: none;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--amber);
+      padding: 0.5rem 0;
+    }
+    details.example summary::-webkit-details-marker { display: none; }
+    details.example summary::before {
+      content: "▸";
+      display: inline-block;
+      margin-right: 0.4rem;
+      transition: transform 0.15s;
+    }
+    details.example[open] summary::before { transform: rotate(90deg); }
+    details.example .body {
+      padding: 0.5rem 0 1rem;
+      font-size: 0.94rem;
+      color: var(--ink-2);
+    }
+    details.example .body p { margin: 0 0 0.75rem; }
+    details.example .body p:last-child { margin-bottom: 0; }
+  </style>
+</head>
+
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <h1 class="mark">
+      <a href="./"><em>dokku</em><span class="amp">·</span>review</a>
+    </h1>
+    <div></div>
+    <nav class="site-nav">
+      <a href="install.html">install</a>
+      <a href="ci.html" class="is-current">ci</a>
+    </nav>
+  </header>
+
+  <p class="deck">
+    Wire your repo to deploy a fresh app <br>
+    <em>on every pull request</em>.
+  </p>
+
+  <div class="ci-intro">
+    <p>
+      Two reusable GitHub Actions workflows live in <a href="https://github.com/dokku-review/actions">dokku-review/actions</a>. Call them from your app repo's workflow file — one deploys when a PR is labeled <code class="chip">review</code>, the other tears down when the PR closes.
+    </p>
+    <p style="font-size: 0.88rem; color: var(--muted);">
+      // Don't have a server yet? <a href="install.html" style="color: var(--amber); font-weight: 700;">Run the installer wizard first →</a>
+    </p>
+  </div>
+
+  <!-- 01 — SECRETS & VARS -->
+  <section>
+    <div class="section-head">
+      <span class="num">01</span><span class="label">Secrets &amp; variables</span>
+    </div>
+
+    <p style="margin: 0 0 1rem; color: var(--ink-2);">
+      Set these on the consumer repo (the app you want to deploy):
+    </p>
+
+    <table class="secrets">
+      <thead>
+        <tr><th>Name</th><th>Value</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>REVIEW_SERVER<span class="kind var">var</span></td>
+          <td class="desc">The Dokku server hostname, e.g. <code class="chip">review.example.com</code>.</td>
+        </tr>
+        <tr>
+          <td>REVIEW_DOMAIN<span class="kind var">var</span></td>
+          <td class="desc">The apps domain (usually same as <code class="chip">REVIEW_SERVER</code>). Apps land at <code class="chip">pr-N.&lt;REVIEW_DOMAIN&gt;</code>.</td>
+        </tr>
+        <tr>
+          <td>REVIEW_SSH_PRIVATE_KEY<span class="kind">secret</span></td>
+          <td class="desc">Private half of an SSH keypair. The public half is added to the server via <code class="chip">dokku ssh-keys:add gha</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="margin: 1rem 0; color: var(--ink-2); font-size: 0.92rem;">
+      If you didn't generate the deploy keypair during installation:
+    </p>
+
+    <div class="codeblock" data-label="Generate &amp; install the CI key">ssh-keygen -t ed25519 -f gha-key -N ''
+ssh you@your-server '<span class="k">cat</span> | <span class="k">sudo dokku ssh-keys:add</span> gha' &lt; gha-key.pub
+gh secret <span class="k">set</span> REVIEW_SSH_PRIVATE_KEY &lt; gha-key
+gh variable <span class="k">set</span> REVIEW_SERVER --body <span class="s">'review.example.com'</span>
+gh variable <span class="k">set</span> REVIEW_DOMAIN --body <span class="s">'review.example.com'</span></div>
+  </section>
+
+  <!-- 02 — WORKFLOW -->
+  <section>
+    <div class="section-head">
+      <span class="num">02</span><span class="label">Workflow file</span>
+    </div>
+
+    <p style="margin: 0 0 1rem; color: var(--ink-2);">
+      Add this as <code class="chip">.github/workflows/review-app.yml</code> in your app repo:
+    </p>
+
+    <div class="codeblock" data-label=".github/workflows/review-app.yml"><span class="k">name:</span> Review App
+<span class="k">on:</span>
+  <span class="k">pull_request:</span>
+    <span class="k">types:</span> [labeled, synchronize, closed]
+
+<span class="k">jobs:</span>
+  <span class="k">deploy:</span>
+    <span class="k">if:</span> <span class="s">&gt;</span>
+      <span class="s">github.event.action != 'closed' &amp;&amp;</span>
+      <span class="s">contains(github.event.pull_request.labels.*.name, 'review')</span>
+    <span class="k">uses:</span> dokku-review/actions/.github/workflows/deploy.yml@v1
+    <span class="k">with:</span>
+      <span class="k">server:</span> <span class="s">${{ vars.REVIEW_SERVER }}</span>
+      <span class="k">domain:</span> <span class="s">${{ vars.REVIEW_DOMAIN }}</span>
+      <span class="k">app:</span>    <span class="s">pr-${{ github.event.pull_request.number }}</span>
+      <span class="k">ref:</span>    <span class="s">${{ github.event.pull_request.head.sha }}</span>
+      <span class="k">with_redis:</span> true
+    <span class="k">secrets:</span>
+      <span class="k">ssh_private_key:</span> <span class="s">${{ secrets.REVIEW_SSH_PRIVATE_KEY }}</span>
+
+  <span class="k">teardown:</span>
+    <span class="k">if:</span> <span class="s">github.event.action == 'closed'</span>
+    <span class="k">uses:</span> dokku-review/actions/.github/workflows/teardown.yml@v1
+    <span class="k">with:</span>
+      <span class="k">server:</span>     <span class="s">${{ vars.REVIEW_SERVER }}</span>
+      <span class="k">app:</span>        <span class="s">pr-${{ github.event.pull_request.number }}</span>
+      <span class="k">with_redis:</span> true
+    <span class="k">secrets:</span>
+      <span class="k">ssh_private_key:</span> <span class="s">${{ secrets.REVIEW_SSH_PRIVATE_KEY }}</span></div>
+
+    <p style="margin: 1rem 0 0; color: var(--muted); font-family: var(--mono); font-size: 0.8rem;">
+      // <code style="background: transparent; border: 0; color: var(--ink); font-weight: 600;">@v1</code> pins the workflow to a tagged release. Drop to <code style="background: transparent; border: 0; color: var(--ink); font-weight: 600;">@main</code> if you want the bleeding edge.
+    </p>
+  </section>
+
+  <!-- 03 — RAILS EXAMPLE -->
+  <section>
+    <div class="section-head">
+      <span class="num">03</span><span class="label">Rails example</span>
+    </div>
+
+    <p style="margin: 0 0 1rem; color: var(--ink-2);">
+      Rails apps need a couple of extras — a master key for credential decryption, the right <code class="chip">RAILS_ENV</code>, and (typically) an <code class="chip">APP_HOST</code> for url helpers. Pass those via <code class="chip">env_vars</code> and <code class="chip">env_secrets</code>:
+    </p>
+
+    <div class="codeblock" data-label="Rails-flavored deploy block">  <span class="k">deploy:</span>
+    <span class="k">if:</span> <span class="s">&gt;</span>
+      <span class="s">github.event.action != 'closed' &amp;&amp;</span>
+      <span class="s">contains(github.event.pull_request.labels.*.name, 'review')</span>
+    <span class="k">uses:</span> dokku-review/actions/.github/workflows/deploy.yml@v1
+    <span class="k">with:</span>
+      <span class="k">server:</span> <span class="s">${{ vars.REVIEW_SERVER }}</span>
+      <span class="k">domain:</span> <span class="s">${{ vars.REVIEW_DOMAIN }}</span>
+      <span class="k">app:</span>    <span class="s">pr-${{ github.event.pull_request.number }}</span>
+      <span class="k">ref:</span>    <span class="s">${{ github.event.pull_request.head.sha }}</span>
+      <span class="k">with_redis:</span> true
+      <span class="k">env_vars:</span> <span class="s">|</span>
+        <span class="s">RAILS_ENV=staging</span>
+        <span class="s">APP_HOST=pr-${{ github.event.pull_request.number }}.${{ vars.REVIEW_DOMAIN }}</span>
+    <span class="k">secrets:</span>
+      <span class="k">ssh_private_key:</span> <span class="s">${{ secrets.REVIEW_SSH_PRIVATE_KEY }}</span>
+      <span class="k">env_secrets:</span> <span class="s">|</span>
+        <span class="s">RAILS_MASTER_KEY=${{ secrets.REVIEW_RAILS_MASTER_KEY }}</span></div>
+
+    <details class="example">
+      <summary>Why a separate env_secrets</summary>
+      <div class="body">
+        <p>The workflow merges <code class="chip">env_vars</code> (plain inputs) and <code class="chip">env_secrets</code> (multi-line GitHub secret) before calling <code class="chip">dokku config:set</code>.</p>
+        <p>Keeping the master key in <code class="chip">env_secrets</code> means GitHub will redact it from any workflow log — interpolating it directly into <code class="chip">env_vars</code> would leak it on a failed step.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- 04 — TEST -->
+  <section>
+    <div class="section-head">
+      <span class="num">04</span><span class="label">Test it</span>
+    </div>
+
+    <ol class="flow" style="margin-top: 0.5rem;">
+      <li>
+        <div>
+          <h3>Open a PR</h3>
+          <p>Any PR will do. The workflow won't trigger yet — it waits for the <code class="chip">review</code> label.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Label it <code class="chip">review</code></h3>
+          <p>The deploy workflow fires. Watch it in the Actions tab. ~3–5 minutes for a typical Rails app.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Hit the URL</h3>
+          <p>A bot comment with <code class="chip">https://pr-N.&lt;REVIEW_DOMAIN&gt;</code> appears on the PR. Click it.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Close the PR</h3>
+          <p>Teardown workflow runs. App + database gone. GitHub deployment marked inactive.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <footer class="colophon">
+    <a href="https://github.com/dokku-review/actions">actions</a> &nbsp;·&nbsp;
+    <a href="https://github.com/dokku-review/system-postgres">plugin</a>
+  </footer>
+
+</div>
+
+<script type="module">
+  // Add a copy button to every codeblock that doesn't already have one
+  document.querySelectorAll('.codeblock').forEach(block => {
+    if (block.querySelector('.copy-btn')) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'copy';
+    btn.addEventListener('click', async () => {
+      const text = block.cloneNode(true);
+      text.querySelectorAll('.copy-btn').forEach(b => b.remove());
+      try {
+        await navigator.clipboard.writeText(text.textContent.trim());
+        btn.textContent = 'copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1400);
+      } catch (e) { btn.textContent = 'copy failed'; }
+    });
+    block.appendChild(btn);
+  });
+</script>
+
+</body>
+</html>

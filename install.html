@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dokku-review · install</title>
+  <link rel="stylesheet" href="setup.css">
+  <style>
+    /* === STEPPER ========================================================== */
+
+    .stepper {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin: 0 0 2.75rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px dashed var(--rule);
+      flex-wrap: wrap;
+    }
+    .stepper-step {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      background: transparent;
+      border: 0;
+      padding: 0.3rem 0;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      transition: color 0.15s;
+    }
+    .stepper-step .num {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+    .stepper-step .label {
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      font-size: 0.72rem;
+    }
+    .stepper-step:hover { color: var(--ink); }
+    .stepper-step.is-done { color: var(--ink); }
+    .stepper-step.is-done .num { color: var(--ink); }
+    .stepper-step.is-current { color: var(--amber); }
+    .stepper-step.is-current .num { color: var(--amber); font-weight: 700; }
+    .stepper-step.is-current .label { font-weight: 700; }
+    .stepper-arrow { color: var(--rule); font-family: var(--mono); user-select: none; }
+
+    /* === WIZARD CHAPTERS ================================================== */
+
+    section.chapter {
+      margin: 0 0 2rem;
+      display: none;
+      animation: fadeIn 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+    section.chapter.is-active { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(0.4rem); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px dashed var(--rule);
+      gap: 1rem;
+    }
+    .step-actions .spacer { flex: 1; }
+
+    /* === VERSION TOGGLE =================================================== */
+
+    .version-toggle {
+      display: inline-flex;
+      border: 1.5px solid var(--ink);
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+    .version-toggle label {
+      display: block;
+      padding: 0.25rem 0.7rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-right: 1.5px solid var(--ink);
+      background: var(--paper);
+      color: var(--ink-2);
+      transition: background 0.1s, color 0.1s;
+      user-select: none;
+    }
+    .version-toggle label:last-child { border-right: 0; }
+    .version-toggle label:hover { background: var(--paper-2); color: var(--ink); }
+    .version-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+    .version-toggle input:checked + label {
+      background: var(--ink);
+      color: var(--paper);
+      font-weight: 700;
+    }
+
+    /* === PLUGIN LIST ====================================================== */
+
+    .plugin-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .plugin-list li {
+      display: grid;
+      grid-template-columns: 1rem 1fr auto;
+      gap: 0.85rem;
+      align-items: center;
+      padding: 0.85rem 0;
+      border-bottom: 1px dashed var(--rule);
+    }
+    .plugin-list .glyph {
+      font-family: var(--mono);
+      color: var(--amber);
+      font-weight: 700;
+      text-align: center;
+    }
+    .plugin-list .name {
+      font-family: var(--sans);
+      font-size: 0.98rem;
+    }
+    .plugin-list .name code {
+      font-family: var(--mono);
+      color: var(--ink-2);
+      font-size: 0.85em;
+      background: var(--paper-2);
+      padding: 0.1em 0.4em;
+      border: 1px solid var(--rule);
+    }
+    .plugin-list .status {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .plugin-list .status.required { color: var(--amber); }
+    .plugin-list label.toggle {
+      display: inline-flex; align-items: center; gap: 0.55rem;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--ink-2);
+    }
+    .plugin-list label.toggle input {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border: 1.5px solid var(--ink);
+      background: var(--paper);
+      position: relative; cursor: pointer;
+      flex-shrink: 0;
+    }
+    .plugin-list label.toggle input:checked {
+      background: var(--ink);
+    }
+    .plugin-list label.toggle input:checked::after {
+      content: "";
+      position: absolute;
+      left: 3px; top: -1px;
+      width: 4px; height: 9px;
+      border: solid var(--paper);
+      border-width: 0 1.5px 1.5px 0;
+      transform: rotate(45deg);
+    }
+
+    /* === NEXT-STEPS NUDGE AT END ========================================== */
+
+    .next-step-link {
+      margin-top: 4rem;
+      padding-top: 1.5rem;
+      border-top: 1px dashed var(--rule);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .next-step-link a {
+      color: var(--amber);
+      text-decoration: none;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .next-step-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+
+<body>
+<div class="page" data-controller="wizard">
+
+  <header class="masthead">
+    <h1 class="mark">
+      <a href="./"><em>dokku</em><span class="amp">·</span>review</a>
+    </h1>
+    <div></div>
+    <nav class="site-nav">
+      <a href="install.html" class="is-current">install</a>
+      <a href="ci.html">ci</a>
+    </nav>
+  </header>
+
+  <p class="deck">
+    Heroku-style review apps, on a server you own.
+  </p>
+
+  <nav class="stepper" aria-label="Wizard steps">
+    <button class="stepper-step is-current" type="button" data-action="click->wizard#goto" data-step="1">
+      <span class="num">01</span><span class="label">Server</span>
+    </button>
+    <span class="stepper-arrow" aria-hidden="true">→</span>
+    <button class="stepper-step" type="button" data-action="click->wizard#goto" data-step="2">
+      <span class="num">02</span><span class="label">Databases</span>
+    </button>
+    <span class="stepper-arrow" aria-hidden="true">→</span>
+    <button class="stepper-step" type="button" data-action="click->wizard#goto" data-step="3">
+      <span class="num">03</span><span class="label">Run</span>
+    </button>
+  </nav>
+
+  <!-- CHAPTER 01 — SERVER -->
+  <section class="chapter is-active" data-wizard-step="1">
+    <div class="field">
+      <label class="field-label" for="f-domain">Apps domain <span class="req">*</span></label>
+      <input id="f-domain" type="text" required
+             data-wizard-target="domain" data-action="input->wizard#update"
+             placeholder="review.example.com">
+      <p class="field-note">Each PR lands at <code data-wizard-target="domainPreview">pr-123.review.example.com</code>. Wildcard DNS (<code>*.your-domain</code>) must already point at the server — Let's Encrypt needs it to issue certificates.</p>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="f-email">Let's Encrypt email</label>
+      <input id="f-email" type="email"
+             data-wizard-target="email" data-action="input->wizard#update"
+             placeholder="admin@review.example.com">
+      <p class="field-note">Used for expiry reminders only — never verified. Defaults to <code>admin@&lt;domain&gt;</code>.</p>
+    </div>
+
+    <div class="step-actions">
+      <div class="spacer"></div>
+      <button type="button" class="btn is-primary" data-wizard-target="step1Next"
+              data-action="click->wizard#next">
+        Next →
+      </button>
+    </div>
+  </section>
+
+  <!-- CHAPTER 02 — DATABASES -->
+  <section class="chapter" data-wizard-step="2">
+    <p class="field-note" style="margin: 0 0 1rem;">
+      <code>system-postgres</code> provisions a fresh Postgres database for each review app and injects URL env vars at deploy time. <code>DATABASE_URL</code> is always provisioned — toggle the rest if your app uses them.
+    </p>
+
+    <ul class="plugin-list">
+      <li>
+        <span class="glyph">▸</span>
+        <span class="name"><code>DATABASE_URL</code> — primary database</span>
+        <span class="status required">Required</span>
+      </li>
+      <li>
+        <span class="glyph">▸</span>
+        <span class="name"><code>CACHE_DATABASE_URL</code> — Solid Cache</span>
+        <label class="toggle">
+          <input type="checkbox" data-wizard-target="dbCache" data-action="change->wizard#update">
+          provision
+        </label>
+      </li>
+      <li>
+        <span class="glyph">▸</span>
+        <span class="name"><code>QUEUE_DATABASE_URL</code> — Solid Queue</span>
+        <label class="toggle">
+          <input type="checkbox" data-wizard-target="dbQueue" data-action="change->wizard#update">
+          provision
+        </label>
+      </li>
+      <li>
+        <span class="glyph">▸</span>
+        <span class="name"><code>CABLE_DATABASE_URL</code> — Solid Cable</span>
+        <label class="toggle">
+          <input type="checkbox" data-wizard-target="dbCable" data-action="change->wizard#update">
+          provision
+        </label>
+      </li>
+    </ul>
+
+    <div class="field" style="margin-top: 1.5rem;">
+      <label class="field-label" for="f-db-extra">Other database URLs</label>
+      <input id="f-db-extra" type="text"
+             data-wizard-target="dbExtra" data-action="input->wizard#update"
+             placeholder="ANALYTICS_DATABASE_URL REPORTING_DATABASE_URL">
+      <p class="field-note">Space-separated env var names. Each gets its own database on the review server.</p>
+    </div>
+
+    <div class="step-actions">
+      <button type="button" class="btn is-ghost" data-action="click->wizard#back">← Back</button>
+      <div class="spacer"></div>
+      <button type="button" class="btn is-primary" data-action="click->wizard#next">Next →</button>
+    </div>
+  </section>
+
+  <!-- CHAPTER 03 — RUN -->
+  <section class="chapter" data-wizard-step="3">
+    <p class="field-note" style="margin-bottom: 0.6rem;">
+      SSH to your server as a sudo user, then paste:
+    </p>
+
+    <div class="terminal" data-label="Terminal / paste into your SSH session">
+      <div class="term-line has-caret">
+        <span class="prompt">$</span>
+        <span class="cmd" data-wizard-target="curlLine"></span>
+        <button class="copy-btn" data-action="click->wizard#copy">copy</button>
+      </div>
+    </div>
+
+    <div class="advisory">
+      <div class="advisory-head">Before you run this</div>
+      <ul>
+        <li>The server must be Ubuntu 24.04 with a public IP.</li>
+        <li>Wildcard DNS (<code>*.your-domain</code> A record) must resolve to the server — otherwise Let's Encrypt fails and the apps run on HTTP only.</li>
+        <li>Expect 5–10 minutes of install output.</li>
+        <li>The script prints generated secrets at the end. Save them.</li>
+      </ul>
+    </div>
+
+    <div class="step-actions">
+      <button type="button" class="btn is-ghost" data-action="click->wizard#back">← Back to edit</button>
+    </div>
+
+    <p class="next-step-link">
+      // server's up — next, wire up CI: <a href="ci.html">Set up GitHub Actions →</a>
+    </p>
+  </section>
+
+  <footer class="colophon">
+    <a href="https://github.com/dokku-review/actions">actions</a> &nbsp;·&nbsp;
+    <a href="https://github.com/dokku-review/system-postgres">plugin</a>
+  </footer>
+
+</div>
+
+<script type="module">
+  import { Application, Controller } from "https://unpkg.com/@hotwired/stimulus@3.2.2/dist/stimulus.js";
+
+  class WizardController extends Controller {
+    static targets = ["domain", "email", "curlLine", "domainPreview", "step1Next",
+                      "dbCache", "dbQueue", "dbCable", "dbExtra"];
+
+    connect() {
+      this.currentStep = 1;
+      this.totalSteps = this.element.querySelectorAll('[data-wizard-step]').length;
+      this.update();
+    }
+
+    next() { this.show(Math.min(this.currentStep + 1, this.totalSteps)); }
+    back() { this.show(Math.max(this.currentStep - 1, 1)); }
+
+    goto(event) {
+      const step = parseInt(event.currentTarget.dataset.step, 10);
+      if (step) this.show(step);
+    }
+
+    show(step) {
+      this.currentStep = step;
+
+      this.element.querySelectorAll('.chapter').forEach(el => {
+        const isActive = parseInt(el.dataset.wizardStep, 10) === step;
+        el.classList.toggle('is-active', isActive);
+      });
+
+      this.element.querySelectorAll('.stepper-step').forEach(el => {
+        const n = parseInt(el.dataset.step, 10);
+        el.classList.toggle('is-current', n === step);
+        el.classList.toggle('is-done', n < step);
+      });
+
+      const active = this.element.querySelector('.chapter.is-active');
+      if (active) {
+        const rect = active.getBoundingClientRect();
+        if (rect.top < 0 || rect.top > window.innerHeight * 0.4) {
+          window.scrollTo({ top: window.scrollY + rect.top - 80, behavior: 'smooth' });
+        }
+      }
+
+      setTimeout(() => {
+        const focusable = active?.querySelector('input:not([type=hidden]), button:not(.btn.is-ghost)');
+        focusable?.focus();
+      }, 50);
+    }
+
+    update() {
+      const rawDomain = this.domainTarget.value.trim();
+      const domain    = rawDomain || "review.example.com";
+      const email     = this.emailTarget.value.trim();
+
+      this.step1NextTarget.disabled = !rawDomain;
+      this.domainPreviewTarget.textContent = `pr-123.${domain}`;
+
+      const databases = ['DATABASE_URL'];
+      if (this.dbCacheTarget.checked) databases.push('CACHE_DATABASE_URL');
+      if (this.dbQueueTarget.checked) databases.push('QUEUE_DATABASE_URL');
+      if (this.dbCableTarget.checked) databases.push('CABLE_DATABASE_URL');
+      const extra = this.dbExtraTarget.value.trim().split(/\s+/).filter(Boolean);
+      databases.push(...extra);
+
+      const envParts = [['DOMAIN', shellQuote(domain)]];
+      if (email) envParts.push(['EMAIL', shellQuote(email)]);
+      if (databases.length > 1) envParts.push(['DATABASES', shellQuote(databases.join(' '))]);
+
+      const envHtml = envParts.map(([k, v]) =>
+        `<span class="env">${k}=${escapeHtml(v)}</span>`
+      ).join(' ');
+
+      this.curlLineTarget.innerHTML =
+        `curl -fsSL <span class="url">https://dokku-review.github.io/install.sh</span> ` +
+        `<span class="pipe">|</span> ${envHtml} sudo -E bash`;
+    }
+
+    async copy(event) {
+      const btn = event.currentTarget;
+      const text = this.curlLineTarget.textContent.trim();
+
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = btn.textContent;
+        btn.textContent = "copied";
+        btn.classList.add("copied");
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.classList.remove("copied");
+        }, 1400);
+      } catch (e) {
+        btn.textContent = "copy failed";
+      }
+    }
+  }
+
+  function shellQuote(value) {
+    if (/^[A-Za-z0-9_./:@=+-]+$/.test(value)) return value;
+    return `'${value.replace(/'/g, `'\\''`)}'`;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  const app = Application.start();
+  app.register("wizard", WizardController);
+</script>
+
+</body>
+</html>
