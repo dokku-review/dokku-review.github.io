@@ -166,6 +166,12 @@
   <span class="k">pull_request:</span>
     <span class="k">types:</span> [labeled, synchronize, closed]
 
+<span class="k">permissions:</span>
+  <span class="k">contents:</span> read
+  <span class="k">deployments:</span> write
+  <span class="k">issues:</span> write
+  <span class="k">pull-requests:</span> write
+
 <span class="k">jobs:</span>
   <span class="k">deploy:</span>
     <span class="k">if:</span> <span class="s">&gt;</span>
@@ -193,6 +199,9 @@
 
     <p style="margin: 1rem 0 0; color: var(--muted); font-family: var(--mono); font-size: 0.8rem;">
       // <code style="background: transparent; border: 0; color: var(--ink); font-weight: 600;">@v1</code> pins the workflow to a tagged release. Drop to <code style="background: transparent; border: 0; color: var(--ink); font-weight: 600;">@main</code> if you want the bleeding edge.
+    </p>
+    <p style="margin: 0.5rem 0 0; color: var(--muted); font-family: var(--mono); font-size: 0.8rem;">
+      // <code style="background: transparent; border: 0; color: var(--ink); font-weight: 600;">deployments</code> tracks the app in the PR sidebar, <code style="background: transparent; border: 0; color: var(--ink); font-weight: 600;">issues</code> + <code style="background: transparent; border: 0; color: var(--ink); font-weight: 600;">pull-requests</code> let the deploy job post its URL comment.
     </p>
   </section>
 
