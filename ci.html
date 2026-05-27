@@ -137,11 +137,11 @@
       <tbody>
         <tr>
           <td>REVIEW_SERVER<span class="kind var">var</span></td>
-          <td class="desc">The Dokku server hostname, e.g. <code class="chip">review.example.com</code>.</td>
+          <td class="desc">The SSH target — an IP (<code class="chip">203.0.113.10</code>) or hostname (<code class="chip">review.example.com</code>). Hostnames need a separate A record pointing at the server; IPs work out of the box.</td>
         </tr>
         <tr>
           <td>REVIEW_DOMAIN<span class="kind var">var</span></td>
-          <td class="desc">The apps domain (usually same as <code class="chip">REVIEW_SERVER</code>). Apps land at <code class="chip">pr-N.&lt;REVIEW_DOMAIN&gt;</code>.</td>
+          <td class="desc">The apps domain, e.g. <code class="chip">review.example.com</code>. Apps land at <code class="chip">pr-N.&lt;REVIEW_DOMAIN&gt;</code> — requires the wildcard <code class="chip">*.&lt;REVIEW_DOMAIN&gt;</code> DNS record.</td>
         </tr>
         <tr>
           <td>REVIEW_SSH_PRIVATE_KEY<span class="kind">secret</span></td>

@@ -22,6 +22,7 @@ DATABASES="${DATABASES:-DATABASE_URL}"
 DOKKU_TAG="${DOKKU_TAG:-v0.38.5}"
 SYSTEM_POSTGRES_PLUGIN="${SYSTEM_POSTGRES_PLUGIN:-https://github.com/dokku-review/system-postgres.git}"
 REVIEW_DB_SECRET="${REVIEW_DB_SECRET:-}"
+SSH_KEY_FILE="${SSH_KEY_FILE:-/var/lib/dokku-review/gha-key}"
 
 # Pinned and exported so the system-postgres install hook picks it up
 export SYSTEM_POSTGRES_VERSION=18
@@ -119,6 +120,17 @@ sudo -u dokku dokku system-postgres:set --global extensions \
 echo "==> Setting global domain to ${DOMAIN}"
 dokku domains:set-global "${DOMAIN}"
 
+# --- CI deploy key --------------------------------------------------------
+
+echo "==> Provisioning CI deploy key (gha)"
+if [ ! -s "$SSH_KEY_FILE" ]; then
+  mkdir -p "$(dirname "$SSH_KEY_FILE")"
+  umask 077
+  ssh-keygen -t ed25519 -f "$SSH_KEY_FILE" -N '' -C 'dokku-review gha' -q
+  dokku ssh-keys:add gha "${SSH_KEY_FILE}.pub"
+fi
+REVIEW_SSH_PRIVATE_KEY=$(cat "$SSH_KEY_FILE")
+
 # --- Summary --------------------------------------------------------------
 
 cat <<SUMMARY
@@ -133,18 +145,18 @@ cat <<SUMMARY
   LE email:    ${EMAIL}
   Databases:   ${DATABASES}
 
-  Review DB secret (save this):
+  system-postgres db-secret (server-side, persisted at ${SECRET_FILE}):
     ${REVIEW_DB_SECRET}
 
+  CI deploy key — REVIEW_SSH_PRIVATE_KEY (also stored at ${SSH_KEY_FILE}):
+
+${REVIEW_SSH_PRIVATE_KEY}
+
   Set GitHub Actions secrets/vars in your app repo:
-    gh secret set REVIEW_DB_SECRET --body '${REVIEW_DB_SECRET}'
     gh variable set REVIEW_SERVER --body '${DOMAIN}'
     gh variable set REVIEW_DOMAIN --body '${DOMAIN}'
-
-  Add a CI deploy key (so GitHub Actions can deploy):
-    ssh-keygen -t ed25519 -f gha-key -N ''
-    cat gha-key.pub | dokku ssh-keys:add gha
-    gh secret set REVIEW_SSH_PRIVATE_KEY < gha-key
+    # Save the key block above to ./gha-key, then:
+    gh secret set REVIEW_SSH_PRIVATE_KEY < ./gha-key
 
   Add per-developer SSH keys:
     curl https://github.com/USERNAME.keys | dokku ssh-keys:add USERNAME
