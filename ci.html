@@ -149,16 +149,6 @@
         </tr>
       </tbody>
     </table>
-
-    <p style="margin: 1rem 0; color: var(--ink-2); font-size: 0.92rem;">
-      If you didn't generate the deploy keypair during installation:
-    </p>
-
-    <div class="codeblock" data-label="Generate &amp; install the CI key">ssh-keygen -t ed25519 -f gha-key -N ''
-ssh you@your-server '<span class="k">cat</span> | <span class="k">sudo dokku ssh-keys:add</span> gha' &lt; gha-key.pub
-gh secret <span class="k">set</span> REVIEW_SSH_PRIVATE_KEY &lt; gha-key
-gh variable <span class="k">set</span> REVIEW_SERVER --body <span class="s">'review.example.com'</span>
-gh variable <span class="k">set</span> REVIEW_DOMAIN --body <span class="s">'review.example.com'</span></div>
   </section>
 
   <!-- 02 — WORKFLOW -->
